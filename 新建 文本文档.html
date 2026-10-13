@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创新互动点名器 - 盲盒版</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --text-color: #ffffff;
+            --accent-color: #e94560;
+            --secondary-color: #16213e;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #app {
+            text-align: center;
+            background: var(--secondary-color);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            width: 80%;
+            max-width: 600px;
+            position: relative;
+        }
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 30px;
+            font-size: 2rem;
+            letter-spacing: 2px;
+        }
+        #name-display {
+            font-size: 5rem;
+            font-weight: bold;
+            height: 120px;
+            line-height: 120px;
+            margin: 20px 0;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            transition: all 0.1s ease;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            border: 2px dashed #555;
+        }
+        .rolling {
+            color: #f0a500 !important;
+            transform: scale(1.1);
+        }
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(233, 69, 96, 0.6);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        #result-box {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            min-height: 40px;
+            color: #00d2ff;
+            font-weight: bold;
+        }
+        #history {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <h1>🎓 创新互动点名器</h1>
+    <div id="name-display">准备就绪</div>
+    <div>
+        <button id="start-btn">开始点名</button>
+        <button id="stop-btn" disabled>停止！</button>
+    </div>
+    <div id="result-box"></div>
+    <div id="history">已点名单：暂无</div>
+</div>
+
+<script>
+    // ================= 配置区 =================
+    // 老师可以在这里修改班级名单
+    const studentList = [
+        "张三", "李四", "王五", "赵六", "钱七", 
+        "孙八", "周九", "吴十", "郑一", "王二"
+    ];
+
+    // 惊喜盲盒效果
+    const effects = [
+        "🎉 恭喜！平时分 +1！",
+        "🤔 请回答本节课的核心问题！",
+        "😎 获得【指定他人回答】特权！",
+        "🍀 幸运儿！获得【免答卡】一张！",
+        "📖 请分享一个你的学习心得！",
+        "😂 模仿一个你喜欢的表情包！"
+    ];
+    // =========================================
+
+    const nameDisplay = document.getElementById('name-display');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const resultBox = document.getElementById('result-box');
+    const historyDiv = document.getElementById('history');
+
+    let timer = null;
+    let pickedHistory = [];
+    let isRolling = false;
+
+    // 更新历史记录显示
+    function updateHistory() {
+        if (pickedHistory.length === 0) {
+            historyDiv.innerText = "已点名单：暂无";
+        } else {
+            historyDiv.innerText = "已点名单：" + pickedHistory.join(", ");
+        }
+    }
+
+    // 开始滚动
+    startBtn.addEventListener('click', () => {
+        if (isRolling) return;
+        isRolling = true;
+        resultBox.innerText = "";
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        nameDisplay.classList.add('rolling');
+
+        // 快速切换名字
+        timer = setInterval(() => {
+            // 优先从未被点到的学生中抽取
+            let availableStudents = studentList.filter(s => !pickedHistory.includes(s));
+            
+            // 如果所有人都被点过了，重置名单
+            if (availableStudents.length === 0) {
+                pickedHistory = [];
+                availableStudents = studentList;
+                updateHistory();
+                alert("所有同学都已点过一遍，名单已重置！");
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableStudents.length);
+            nameDisplay.innerText = availableStudents[randomIndex];
+        }, 50);
+    });
+
+    // 停止滚动
+    stopBtn.addEventListener('click', () => {
+        if (!isRolling) return;
+        isRolling = false;
+        clearInterval(timer);
+        nameDisplay.classList.remove('rolling');
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+
+        const finalName = nameDisplay.innerText;
+        
+        // 记录历史
+        if (!pickedHistory.includes(finalName)) {
+            pickedHistory.push(finalName);
+        }
+        updateHistory();
+
+        // 触发盲盒效果
+        const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+        resultBox.innerText = `【${finalName}】 ` + randomEffect;
+        
+        // 简单的音效反馈（通过 Web Audio API 实现轻微提示音）
+        playBeep();
+    });
+
+    // 播放提示音（无需外部音频文件）
+    function playBeep() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz
+            oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        } catch (e) {
+            console.log("浏览器不支持自动播放音频");
+        }
+    }
+
+    // 初始化
+    updateHistory();
+</script>
+</body>
+</html>
